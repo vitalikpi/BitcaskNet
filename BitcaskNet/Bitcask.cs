@@ -18,6 +18,7 @@ namespace BitcaskNet
         private FileStream writeStream;
         private BinaryWriter bw;
         private readonly HashAlgorithm murmur;
+        private byte[] _thombstoneObject = MakeThombstone();
 
         /// <summary>
         /// Open a new or existing Bitcask datastore with additional options.
@@ -34,30 +35,51 @@ namespace BitcaskNet
         {
             this.murmur = MurmurHash.Create128(seed: 3475832);
 
-            // foreach (var file in Directory.EnumerateFiles(directory, "*.bitcask"))
-            // {
-            //     using var rs = new FileStream(file, FileMode.Open, FileAccess.Read, FileShare.None);
-            //     using var reader = new BinaryReader(rs);
-            //     
-            //     var timestamp = reader.ReadInt64();
-            //     var keySize = reader.ReadInt32();
-            //     var valueSize = reader.ReadInt32();
-            //     var keyBytes = reader.ReadBytes(keySize);
-            //     var valuePosition = rs.Position;
-            //     var value = reader.ReadBytes(valueSize);
-            //
-            //     var key = new BitcaskKey(keyBytes, this.murmur);
-            //     var block = new Block
-            //     {
-            //         FileId = file,
-            //         ValueSize = value.Length,
-            //         ValuePos = valuePosition,
-            //         Timestamp = timestamp
-            //     };
-            //
-            //     keydir[key] = block;
-            //
-            // }
+            foreach (var file in Directory.EnumerateFiles(directory, "*.bitcask"))
+            {
+                using var rs = new FileStream(file, FileMode.Open, FileAccess.Read, FileShare.None);
+                using var reader = new BinaryReader(rs);
+
+                while (true)
+                {
+                    try
+                    {
+                        var timestamp = reader.ReadInt64();
+                        var keySize = reader.ReadInt32();
+                        var valueSize = reader.ReadInt32();
+                        var keyBytes = reader.ReadBytes(keySize);
+                        var valuePosition = rs.Position;
+                        var value = reader.ReadBytes(valueSize);
+
+                        var key = new BitcaskKey(keyBytes, this.murmur);
+
+                        if (value.SequenceEqual(_thombstoneObject))
+                        {
+                            if (keydir.ContainsKey(key))
+                            {
+                                keydir.Remove(key);
+                            }
+                        }
+                        else
+                        {
+                            var block = new Block
+                            {
+                                FileId = file,
+                                ValueSize = value.Length,
+                                ValuePos = valuePosition,
+                                Timestamp = timestamp
+                            };
+
+                            keydir[key] = block;
+                        }
+                    }
+                    catch (EndOfStreamException e)
+                    {
+                        // Intentionally swallow this exception
+                        break;
+                    }
+                }
+            }
 
 
             this.activeFilePath = Path.Combine(directory, Path.GetRandomFileName() + ".bitcask");
@@ -88,7 +110,11 @@ namespace BitcaskNet
             }
             else
             {
-                throw new NotImplementedException();
+                using var rs = new FileStream(block.FileId, FileMode.Open, FileAccess.Read, FileShare.None);
+                using var reader = new BinaryReader(rs);
+                rs.Seek(block.ValuePos, SeekOrigin.Begin);
+                var value = reader.ReadBytes(block.ValueSize);
+                return value;
             }
         }
 
@@ -114,16 +140,16 @@ namespace BitcaskNet
             };
         }
 
-        private uint ComputeKeyHash(byte[] key)
-        {
-            return BitConverter.ToUInt32(murmur.ComputeHash(key));
-        }
-
         public void Delete(byte[] key)
         {
             var internalKey = new BitcaskKey(key, murmur);
-            Put(key, Encoding.Default.GetBytes(Thombstone));
+            Put(key, _thombstoneObject);
             this.keydir.Remove(internalKey);
+        }
+
+        private static byte[] MakeThombstone()
+        {
+            return Encoding.Default.GetBytes(Thombstone);
         }
 
         public IEnumerable<byte[]> ListKeys()
