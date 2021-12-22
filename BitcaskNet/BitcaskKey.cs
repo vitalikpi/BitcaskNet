@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using System.Security.Cryptography;
 
 namespace BitcaskNet
@@ -35,15 +36,7 @@ namespace BitcaskNet
             if (this._array.Length != other._array.Length)
                 return false;
 
-            for (int i = 0; i < _array.Length; i++)
-            {
-                if (_array[i] != other._array[i])
-                {
-                    return false;
-                }
-            }
-
-            return true;
+            return _array.SequenceEqual(other._array);
         }
     }
 }
