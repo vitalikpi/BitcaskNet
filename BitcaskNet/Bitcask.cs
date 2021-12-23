@@ -19,7 +19,7 @@ namespace BitcaskNet
         private readonly BinaryWriter _bw;
         private readonly HashAlgorithm _murmur;
         private readonly byte[] _thombstoneObject = MakeThombstone();
-        private readonly FileSystemProxy _fileSystem;
+        private readonly IIOProxy _fileSystem;
 
         /// <summary>
         /// Open a new or existing Bitcask datastore with additional options.
@@ -33,9 +33,15 @@ namespace BitcaskNet
         /// <param name="options"></param>
         /// <returns></returns>
         public Bitcask(string directory)
+            : this(new FileSystemProxy(directory))
         {
+        }
+
+        internal Bitcask(IIOProxy ioProxy)
+        {
+            _fileSystem = ioProxy;
             this._murmur = MurmurHash.Create128(seed: 3475832);
-            _fileSystem = new FileSystemProxy(directory);
+
 
             foreach (var fileId in _fileSystem.EnumerateFiles())
             {
@@ -54,6 +60,11 @@ namespace BitcaskNet
                         var value = reader.ReadBytes(valueSize);
 
                         var key = new BitcaskKey(keyBytes, this._murmur);
+
+                        if (_keydir.ContainsKey(key) && timestamp < _keydir[key].Timestamp)
+                        {
+                            continue;
+                        } 
 
                         if (value.SequenceEqual(_thombstoneObject))
                         {
@@ -85,7 +96,6 @@ namespace BitcaskNet
 
             (this._activeFileId, this._readStream, this._writeStream) = _fileSystem.CreateActiveStreams();
             this._bw = new BinaryWriter(this._writeStream);
-            
         }
 
         public byte[] Get(byte[] key)

@@ -3,7 +3,7 @@ using System.IO;
 
 namespace BitcaskNet
 {
-    public interface IIOProxy
+    internal interface IIOProxy
     {
         IEnumerable<string> EnumerateFiles();
         Stream MakeReadStream(string fileId);
