@@ -67,7 +67,7 @@ namespace BitcaskNet.Test
         }
 
         [Fact]
-        public void RetrieveingDeletedRecord()
+        public void RetrievingDeletedRecord()
         {
             var temporaryDirectory = GetTemporaryDirectory();
             var key1 = new byte[] { 0, 0 };
