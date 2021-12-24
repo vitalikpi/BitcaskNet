@@ -5,11 +5,11 @@ namespace BitcaskNet.Test
 {
     public class CorruptedFileTests
     {
-        private readonly InMemoryIOProxy _ds;
+        private readonly InMemoryIOStrategy _ds;
 
         public CorruptedFileTests()
         {
-            _ds = new InMemoryIOProxy();
+            _ds = new InMemoryIOStrategy();
         }
 
         [Fact]
@@ -24,7 +24,7 @@ namespace BitcaskNet.Test
             position = _ds.AppendRecord(position, fileId, 1, key1, updatedValue1);
             _ds.AppendRecord(position, fileId, 0, key1, value1);
 
-            using var bcsk = new Bitcask(_ds);
+            using var bcsk = new Bitcask(_ds, new DeterministicTimeStrategy());
 
 
             Assert.Equal(updatedValue1, bcsk.Get(key1));

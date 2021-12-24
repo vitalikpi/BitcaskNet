@@ -19,7 +19,8 @@ namespace BitcaskNet
         private readonly BinaryWriter _bw;
         private readonly HashAlgorithm _murmur;
         private readonly byte[] _thombstoneObject = MakeThombstone();
-        private readonly IIOProxy _fileSystem;
+        private readonly IIOStrategy _fileSystem;
+        private readonly ITimeStrategy _time;
 
         /// <summary>
         /// Open a new or existing Bitcask datastore with additional options.
@@ -33,13 +34,15 @@ namespace BitcaskNet
         /// <param name="options"></param>
         /// <returns></returns>
         public Bitcask(string directory)
-            : this(new FileSystemProxy(directory))
+            : this(new FileSystemStrategy(directory, new TimeStrategy()), new TimeStrategy())
         {
         }
 
-        internal Bitcask(IIOProxy ioProxy)
+        internal Bitcask(IIOStrategy ioStrategy, ITimeStrategy time)
         {
-            _fileSystem = ioProxy;
+            _fileSystem = ioStrategy;
+            _time = time;
+
             this._murmur = MurmurHash.Create128(seed: 3475832);
 
 
@@ -129,7 +132,7 @@ namespace BitcaskNet
 
         public void Put(byte[] key, byte[] value)
         {
-            var timestamp = new DateTimeOffset(DateTime.UtcNow).ToUnixTimeMilliseconds();
+            var timestamp = new DateTimeOffset(DateTime.UtcNow).ToUnixTimeMilliseconds(); // TODO: make sure that this should be milliseconds
             _bw.Write(timestamp);
             _bw.Write(key.Length);
             _bw.Write(value.Length);

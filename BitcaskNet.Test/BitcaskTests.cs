@@ -9,7 +9,7 @@ namespace BitcaskNet.Test
         [Fact]
         public void PutThenGet()
         {
-            var temporaryDirectory = GetTemporaryDirectory();
+            var temporaryDirectory = DirectoryUtils.CreateTemporaryDirectory();
             var key = new byte[] { 0, 0 };
             var value = Encoding.Default.GetBytes("zero");
 
@@ -23,7 +23,7 @@ namespace BitcaskNet.Test
         [Fact]
         public void PutTwiceUpdatesTheValue()
         {
-            using (var d = new Bitcask(GetTemporaryDirectory()))
+            using (var d = new Bitcask(DirectoryUtils.CreateTemporaryDirectory()))
             {
                 var original = Encoding.Default.GetBytes("zero");
                 var updated = Encoding.Default.GetBytes("nil");
@@ -36,7 +36,7 @@ namespace BitcaskNet.Test
         [Fact]
         public void DeleteRemovesTheKey()
         {
-            using (var d = new Bitcask(GetTemporaryDirectory()))
+            using (var d = new Bitcask(DirectoryUtils.CreateTemporaryDirectory()))
             {
                 var key = new byte[] { 0, 0 };
                 var value = Encoding.Default.GetBytes("zero");
@@ -51,7 +51,7 @@ namespace BitcaskNet.Test
         [Fact]
         public void ReadFileAndRetrieveValue()
         {
-            var temporaryDirectory = GetTemporaryDirectory();
+            var temporaryDirectory = DirectoryUtils.CreateTemporaryDirectory();
             var key = new byte[] { 0, 0 };
             var value = Encoding.Default.GetBytes("zero");
 
@@ -69,7 +69,7 @@ namespace BitcaskNet.Test
         [Fact]
         public void RetrievingDeletedRecord()
         {
-            var temporaryDirectory = GetTemporaryDirectory();
+            var temporaryDirectory = DirectoryUtils.CreateTemporaryDirectory();
             var key1 = new byte[] { 0, 0 };
             var value1 = Encoding.Default.GetBytes("zero");
             var key2 = new byte[] { 1, 1 };
@@ -87,13 +87,6 @@ namespace BitcaskNet.Test
                 Assert.Null(d.Get(key1));
                 Assert.Equal(value2, d.Get(key2));
             }
-        }
-
-        public string GetTemporaryDirectory()
-        {
-            string tempDirectory = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
-            Directory.CreateDirectory(tempDirectory);
-            return tempDirectory;
         }
     }
 }

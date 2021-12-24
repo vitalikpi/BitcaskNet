@@ -5,12 +5,12 @@ using System.Text;
 
 namespace BitcaskNet.Test
 {
-    internal class InMemoryIOProxy: IIOProxy
+    internal class InMemoryIOStrategy: IIOStrategy
     {
         private readonly Dictionary<string, byte[]> _directory;
         private char _lastUsedId = '`'; // The char before 'a'
 
-        public InMemoryIOProxy()
+        public InMemoryIOStrategy()
         {
             _directory = new Dictionary<string, byte[]>();
         }
