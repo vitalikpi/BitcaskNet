@@ -34,5 +34,10 @@ namespace BitcaskNet
             var writeStream = new FileStream(activeFileId, FileMode.Append, FileAccess.Write, FileShare.Read);
             return (activeFileId, readStream, writeStream);
         }
+
+        public void DeleteFile(string fileId)
+        {
+            File.Delete(fileId);
+        }
     }
 }

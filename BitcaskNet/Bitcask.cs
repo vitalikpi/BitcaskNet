@@ -89,7 +89,7 @@ namespace BitcaskNet
                             _keydir[key] = block;
                         }
                     }
-                    catch (EndOfStreamException e)
+                    catch (EndOfStreamException)
                     {
                         // Intentionally swallow this exception
                         break;
@@ -99,6 +99,45 @@ namespace BitcaskNet
 
             (this._activeFileId, this._readStream, this._writeStream) = _fileSystem.CreateActiveStreams();
             this._bw = new BinaryWriter(this._writeStream);
+        }
+
+        private IEnumerable<(BitcaskKey key, long timestamp, int keySize, int valueSize, byte[] keyBytes, long valuePosition, byte[] value)> IterateOverRecords(IEnumerable<string> files)
+        {
+            foreach (var fileId in files)
+            {
+                using var rs = _fileSystem.MakeReadStream(fileId);
+                using var reader = new BinaryReader(rs);
+
+                while (true)
+                {
+                    long timestamp;
+                    int keySize;
+                    int valueSize;
+                    byte[] keyBytes;
+                    long valuePosition;
+                    byte[] value;
+
+
+                    try
+                    {
+                        timestamp = reader.ReadInt64();
+                        keySize = reader.ReadInt32();
+                        valueSize = reader.ReadInt32();
+                        keyBytes = reader.ReadBytes(keySize);
+                        valuePosition = rs.Position;
+                        value = reader.ReadBytes(valueSize);
+                    }
+                    catch (EndOfStreamException)
+                    {
+                        // Intentionally swallow this exception
+                        yield break;
+                    }
+
+                    var key = new BitcaskKey(keyBytes, this._murmur);
+
+                    yield return (key, timestamp, keySize, valueSize, keyBytes, valuePosition, value);
+                }
+            }
         }
 
         public byte[] Get(byte[] key)
@@ -176,7 +215,27 @@ namespace BitcaskNet
 
         public void Merge()
         {
-            throw new NotImplementedException();
+            var files = _fileSystem.EnumerateFiles().Where(fileid => fileid != _activeFileId);
+
+            foreach (var record in IterateOverRecords(files))
+            {
+                if (record.value.SequenceEqual(_thombstoneObject))
+                {
+                    continue;
+                }
+
+                if (_keydir.ContainsKey(record.key)
+                    && record.valueSize == _keydir[record.key].ValueSize
+                    && Get(record.keyBytes).SequenceEqual(record.value) )
+                {
+                    Put(record.keyBytes, record.value);
+                }
+            }
+
+            foreach (var fileId in files)
+            {
+                _fileSystem.DeleteFile(fileId);
+            }
         }
 
         public void Sync()

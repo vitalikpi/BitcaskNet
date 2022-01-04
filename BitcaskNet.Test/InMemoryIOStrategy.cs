@@ -45,6 +45,8 @@ namespace BitcaskNet.Test
             return _lastUsedId.ToString();
         }
 
+        public string LastUsedId => _lastUsedId.ToString();
+
         public long AppendRecord(long position, string fileId, long timestamp, byte[] key, byte[] value)
         {
             using var stream =  new MemoryStream(_directory[fileId], true);
@@ -61,5 +63,9 @@ namespace BitcaskNet.Test
             return stream.Position;
         }
 
+        public void DeleteFile(string fileId)
+        {
+            _directory.Remove(fileId);
+        }
     }
 }

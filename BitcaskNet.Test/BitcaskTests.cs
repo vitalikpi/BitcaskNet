@@ -1,4 +1,5 @@
 ﻿using System.IO;
+using System.Linq;
 using System.Text;
 using Xunit;
 
@@ -88,5 +89,35 @@ namespace BitcaskNet.Test
                 Assert.Equal(value2, d.Get(key2));
             }
         }
+
+        [Fact]
+        public void Merge()
+        {
+            var temporaryDirectory = DirectoryUtils.CreateTemporaryDirectory();
+
+            using (var d = new Bitcask(temporaryDirectory))
+            {
+                d.Put(new byte[] { 1 }, new byte[] { 1, 1, 1 });
+            }
+
+            using (var d = new Bitcask(temporaryDirectory))
+            {
+                d.Put(new byte[] { 1 }, new byte[] { 2, 2, 2 });
+            }
+
+            using (var bcsk = new Bitcask(temporaryDirectory))
+            {
+                bcsk.Merge();
+                Assert.Equal(new byte[] { 2, 2, 2 }, bcsk.Get(new byte[] { 1 }));
+            }
+
+            Assert.True(Directory.GetFiles(temporaryDirectory).Single().Any());
+
+            using (var bcsk = new Bitcask(temporaryDirectory))
+            {
+                Assert.Equal(new byte[] { 2, 2, 2 }, bcsk.Get(new byte[] { 1 }));
+            }
+        }
+
     }
 }
