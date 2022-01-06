@@ -1,15 +1,20 @@
-﻿using System.Text;
+﻿using Microsoft.Extensions.Logging;
 using Xunit;
+using Xunit.Abstractions;
 
 namespace BitcaskNet.Test
 {
     public class CorruptedFileTests
     {
         private readonly InMemoryIOStrategy _ds;
+        private readonly ITestOutputHelper _output;
+        private readonly ILogger<Bitcask> _logger;
 
-        public CorruptedFileTests()
+        public CorruptedFileTests(ITestOutputHelper output)
         {
             _ds = new InMemoryIOStrategy();
+            _output = output;
+            _logger = output.BuildLoggerFor<Bitcask>();
         }
 
         [Fact]
@@ -24,7 +29,7 @@ namespace BitcaskNet.Test
             position = _ds.AppendRecord(position, fileId, 1, key1, updatedValue1);
             _ds.AppendRecord(position, fileId, 0, key1, value1);
 
-            using var bcsk = new Bitcask(_ds, 1024*1024*1024);
+            using var bcsk = new Bitcask(_logger, _ds, 1024*1024*1024);
 
 
             Assert.Equal(updatedValue1, bcsk.Get(key1));

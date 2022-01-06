@@ -20,6 +20,7 @@ namespace BitcaskNet
             return BitConverter.ToInt32(_murmur.ComputeHash(_array));
         }
 
+        
         public override bool Equals(object? other)
         {
             return Equals(other as BitcaskKey);

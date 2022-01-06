@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Force.Crc32;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
@@ -53,6 +54,10 @@ namespace BitcaskNet.Test
             stream.Seek(position, SeekOrigin.Begin);
             using var bw = new BinaryWriter(stream);
 
+            uint intermediate = Crc32CAlgorithm.Compute(key);
+            uint crc = Crc32CAlgorithm.Append(intermediate, value);
+
+            bw.Write(crc);
             bw.Write(timestamp);
             bw.Write(key.Length);
             bw.Write(value.Length);

@@ -5,6 +5,8 @@ using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
 using Murmur;
+using Force.Crc32;
+using Microsoft.Extensions.Logging;
 
 namespace BitcaskNet
 {
@@ -12,12 +14,14 @@ namespace BitcaskNet
     {
         private const string Thombstone = "Bitcask thombstone";
         private readonly Dictionary<BitcaskKey, Block> _keydir = new Dictionary<BitcaskKey, Block>();
+        private readonly ILogger<Bitcask> _logger;
         private string _activeFileId;
         private Stream _readStream;
         private Stream _writeStream;
         private BinaryWriter _bw;
         private readonly HashAlgorithm _murmur;
         private readonly byte[] _thombstoneObject = MakeThombstone();
+        
         private readonly IIOStrategy _fileSystem;
         private readonly long _maxFileSize; // In bytes
 
@@ -32,75 +36,59 @@ namespace BitcaskNet
         /// <param name="dirrectoryName"></param>
         /// <param name="options"></param>
         /// <returns></returns>
-        public Bitcask(string directory)
-            : this(new FileSystemStrategy(directory, new TimeStrategy()), 1024*1024*1024)
+        public Bitcask(ILogger<Bitcask> logger, string directory)
+            : this(logger, new FileSystemStrategy(directory, new TimeStrategy()), 1024*1024*1024)
         {
         }
 
-        internal Bitcask(IIOStrategy ioStrategy, long maxFileSize)
+        internal Bitcask(ILogger<Bitcask> logger, IIOStrategy ioStrategy, long maxFileSize)
         {
+            _logger = logger;
             _fileSystem = ioStrategy;
             _maxFileSize = maxFileSize;
 
             this._murmur = MurmurHash.Create128(seed: 3475832);
 
-
-            foreach (var fileId in _fileSystem.EnumerateFiles())
-            {
-                using var rs = _fileSystem.MakeReadStream(fileId);
-                using var reader = new BinaryReader(rs);
-
-                while (true)
-                {
-                    try
-                    {
-                        var timestamp = reader.ReadInt64();
-                        var keySize = reader.ReadInt32();
-                        var valueSize = reader.ReadInt32();
-                        var keyBytes = reader.ReadBytes(keySize);
-                        var valuePosition = rs.Position;
-                        var value = reader.ReadBytes(valueSize);
-
-                        var key = new BitcaskKey(keyBytes, this._murmur);
-
-                        if (_keydir.ContainsKey(key) && timestamp < _keydir[key].Timestamp)
-                        {
-                            continue;
-                        } 
-
-                        if (value.SequenceEqual(_thombstoneObject))
-                        {
-                            if (_keydir.ContainsKey(key))
-                            {
-                                _keydir.Remove(key);
-                            }
-                        }
-                        else
-                        {
-                            var block = new Block
-                            {
-                                FileId = fileId,
-                                ValueSize = value.Length,
-                                ValuePos = valuePosition,
-                                Timestamp = timestamp
-                            };
-
-                            _keydir[key] = block;
-                        }
-                    }
-                    catch (EndOfStreamException)
-                    {
-                        // Intentionally swallow this exception
-                        break;
-                    }
-                }
-            }
+            LoadKeyDir();
 
             (this._activeFileId, this._readStream, this._writeStream) = _fileSystem.CreateActiveStreams();
             this._bw = new BinaryWriter(this._writeStream);
         }
 
-        private IEnumerable<(BitcaskKey key, long timestamp, int keySize, int valueSize, byte[] keyBytes, long valuePosition, byte[] value)> IterateOverRecords(IEnumerable<string> files)
+        private void LoadKeyDir()
+        {
+            foreach (var record in IterateOverRecords(_fileSystem.EnumerateFiles()))
+            {
+                var key = new BitcaskKey(record.keyBytes, this._murmur);
+
+                if (_keydir.ContainsKey(key) && record.timestamp < _keydir[key].Timestamp)
+                {
+                    continue;
+                }
+
+                if (record.value.SequenceEqual(_thombstoneObject))
+                {
+                    if (_keydir.ContainsKey(key))
+                    {
+                        _keydir.Remove(key);
+                    }
+                }
+                else
+                {
+                    var block = new Block
+                    {
+                        FileId = record.fileId,
+                        ValueSize = record.value.Length,
+                        ValuePos = record.valuePosition,
+                        Timestamp = record.timestamp
+                    };
+
+                    _keydir[key] = block;
+                }
+            }
+        }
+
+        private IEnumerable<(string fileId, BitcaskKey key, long timestamp, int keySize, int valueSize, byte[] keyBytes, long valuePosition, byte[] value)> IterateOverRecords(IEnumerable<string> files)
         {
             foreach (var fileId in files)
             {
@@ -109,6 +97,8 @@ namespace BitcaskNet
 
                 while (true)
                 {
+                    long recordPosition;
+                    uint expectedCRC;
                     long timestamp;
                     int keySize;
                     int valueSize;
@@ -116,9 +106,10 @@ namespace BitcaskNet
                     long valuePosition;
                     byte[] value;
 
-
                     try
                     {
+                        recordPosition = rs.Position;
+                        expectedCRC = reader.ReadUInt32();
                         timestamp = reader.ReadInt64();
                         keySize = reader.ReadInt32();
                         valueSize = reader.ReadInt32();
@@ -132,9 +123,19 @@ namespace BitcaskNet
                         yield break;
                     }
 
+
+                    uint intermediate = Crc32CAlgorithm.Compute(keyBytes);
+                    uint actualCRC = Crc32CAlgorithm.Append(intermediate, value);
+
+                    if (actualCRC != expectedCRC)
+                    {
+                        _logger.LogError("CRC mismatch error fileid=[" + fileId +"], position=[" + recordPosition + "]");
+                        continue;
+                    }
+
                     var key = new BitcaskKey(keyBytes, this._murmur);
 
-                    yield return (key, timestamp, keySize, valueSize, keyBytes, valuePosition, value);
+                    yield return (fileId, key, timestamp, keySize, valueSize, keyBytes, valuePosition, value);
                 }
             }
         }
@@ -171,6 +172,11 @@ namespace BitcaskNet
         public void Put(byte[] key, byte[] value)
         {
             var timestamp = new DateTimeOffset(DateTime.UtcNow).ToUnixTimeMilliseconds(); // TODO: make sure that this should be milliseconds
+
+            uint intermediate = Crc32CAlgorithm.Compute(key);
+            uint crc = Crc32CAlgorithm.Append(intermediate, value);
+
+            _bw.Write(crc);
             _bw.Write(timestamp);
             _bw.Write(key.Length);
             _bw.Write(value.Length);
