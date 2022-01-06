@@ -7,13 +7,16 @@ using System.Text;
 using Murmur;
 using Force.Crc32;
 using Microsoft.Extensions.Logging;
+using System.Collections.Concurrent;
 
 namespace BitcaskNet
 {
     public class Bitcask: IDisposable
     {
+        private object _writeLock = new object();
+        private object _activeFileLock = new object();
         private const string Thombstone = "Bitcask thombstone";
-        private readonly Dictionary<BitcaskKey, Block> _keydir = new Dictionary<BitcaskKey, Block>();
+        private readonly ConcurrentDictionary<BitcaskKey, Block> _keydir = new ConcurrentDictionary<BitcaskKey, Block>();
         private readonly ILogger<Bitcask> _logger;
         private string _activeFileId;
         private Stream _readStream;
@@ -70,7 +73,7 @@ namespace BitcaskNet
                 {
                     if (_keydir.ContainsKey(key))
                     {
-                        _keydir.Remove(key);
+                        _keydir.TryRemove(key, out var _);
                     }
                 }
                 else
@@ -144,74 +147,86 @@ namespace BitcaskNet
         {
             var internalKey = new BitcaskKey(key, _murmur);
 
-            if (!_keydir.ContainsKey(internalKey))
+            if (_keydir.TryGetValue(internalKey, out Block block))
             {
-                return null;
-            }
+                if (_activeFileId == block.FileId)
+                {
+                    _readStream.Seek(block.ValuePos, SeekOrigin.Begin);
+                    var buf = new byte[block.ValueSize];
+                    _readStream.Read(buf, 0, block.ValueSize);
 
-            var block = _keydir[internalKey];
-
-            if (_activeFileId == block.FileId)
-            {
-                _readStream.Seek(block.ValuePos, SeekOrigin.Begin);
-                var buf = new byte[block.ValueSize];
-                _readStream.Read(buf, 0, block.ValueSize);
-
-                return buf;
+                    return buf;
+                }
+                else
+                {
+                    using var rs = _fileSystem.MakeReadStream(block.FileId);
+                    using var reader = new BinaryReader(rs);
+                    rs.Seek(block.ValuePos, SeekOrigin.Begin);
+                    var value = reader.ReadBytes(block.ValueSize);
+                    return value;
+                }
             }
             else
             {
-                using var rs = _fileSystem.MakeReadStream(block.FileId);
-                using var reader = new BinaryReader(rs);
-                rs.Seek(block.ValuePos, SeekOrigin.Begin);
-                var value = reader.ReadBytes(block.ValueSize);
-                return value;
+                return null;
             }
         }
 
         public void Put(byte[] key, byte[] value)
         {
-            var timestamp = new DateTimeOffset(DateTime.UtcNow).ToUnixTimeMilliseconds(); // TODO: make sure that this should be milliseconds
+            AppendToActiveFileAndRunAction(key, value, (internalKey, block) => _keydir[internalKey] = block);
+        }
 
+        private void AppendToActiveFileAndRunAction(byte[] key, byte[] value, Action<BitcaskKey,Block> action)
+        {
+            var timestamp = new DateTimeOffset(DateTime.UtcNow).ToUnixTimeMilliseconds(); // TODO: make sure that this should be milliseconds
             uint intermediate = Crc32CAlgorithm.Compute(key);
             uint crc = Crc32CAlgorithm.Append(intermediate, value);
-
-            _bw.Write(crc);
-            _bw.Write(timestamp);
-            _bw.Write(key.Length);
-            _bw.Write(value.Length);
-            _bw.Write(key);
-            var position = _writeStream.Position;
-            _bw.Write(value);
-            _bw.Flush();
-
             var internalKey = new BitcaskKey(key, _murmur);
 
-            _keydir[internalKey] = new Block
+            lock (_writeLock)
             {
-                FileId = this._activeFileId,
-                ValueSize = value.Length,
-                ValuePos = position,
-                Timestamp = timestamp
-            };
+                _bw.Write(crc);
+                _bw.Write(timestamp);
+                _bw.Write(key.Length);
+                _bw.Write(value.Length);
+                _bw.Write(key);
+                var position = _writeStream.Position;
+                _bw.Write(value);
+                _bw.Flush();
 
-            if (_writeStream.Position > _maxFileSize)
+                var block = new Block
+                {
+                    FileId = this._activeFileId,
+                    ValueSize = value.Length,
+                    ValuePos = position,
+                    Timestamp = timestamp
+                };
+
+                action(internalKey, block);
+            }
+
+            lock (_activeFileLock)
             {
-                Sync();
-                _bw.Dispose();
-                _writeStream.Dispose();
-                _readStream.Dispose();
+                if (_writeStream.Position > _maxFileSize)
+                {
+                    Sync();
+                    _bw.Dispose();
+                    _writeStream.Dispose();
+                    _readStream.Dispose();
 
-                (this._activeFileId, this._readStream, this._writeStream) = _fileSystem.CreateActiveStreams();
-                _bw = new BinaryWriter(this._writeStream);
+                    (this._activeFileId, this._readStream, this._writeStream) = _fileSystem.CreateActiveStreams();
+                    _bw = new BinaryWriter(this._writeStream);
+                }
             }
         }
 
         public void Delete(byte[] key)
         {
-            var internalKey = new BitcaskKey(key, _murmur);
-            Put(key, _thombstoneObject);
-            this._keydir.Remove(internalKey);
+            AppendToActiveFileAndRunAction(key, _thombstoneObject, (internalKey, block) => {
+                if (_keydir.TryRemove(internalKey, out var _))
+                    _logger.LogError("Tho,bstone was added to file but failed to remove from keydir.");
+            });
         }
 
         private static byte[] MakeThombstone()
