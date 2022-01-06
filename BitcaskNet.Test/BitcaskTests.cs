@@ -119,5 +119,19 @@ namespace BitcaskNet.Test
             }
         }
 
+        [Fact]
+        public void MaxFileSize()
+        {
+            var temporaryDirectory = DirectoryUtils.CreateTemporaryDirectory();
+
+            using (var d = new Bitcask(new FileSystemStrategy(temporaryDirectory, new DeterministicTimeStrategy()), 1024))
+            {
+                d.Put(new byte[] { 1 }, new byte[1025]);
+                d.Put(new byte[] { 1 }, new byte[100]);
+            }
+
+            Assert.Equal(2, Directory.EnumerateFiles(temporaryDirectory, "*.bitcask.data").Count());
+        }
+
     }
 }

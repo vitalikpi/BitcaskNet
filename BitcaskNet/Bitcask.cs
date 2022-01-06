@@ -11,16 +11,15 @@ namespace BitcaskNet
     public class Bitcask: IDisposable
     {
         private const string Thombstone = "Bitcask thombstone";
-
         private readonly Dictionary<BitcaskKey, Block> _keydir = new Dictionary<BitcaskKey, Block>();
-        private readonly string _activeFileId;
-        private readonly Stream _readStream;
-        private readonly Stream _writeStream;
-        private readonly BinaryWriter _bw;
+        private string _activeFileId;
+        private Stream _readStream;
+        private Stream _writeStream;
+        private BinaryWriter _bw;
         private readonly HashAlgorithm _murmur;
         private readonly byte[] _thombstoneObject = MakeThombstone();
         private readonly IIOStrategy _fileSystem;
-        private readonly ITimeStrategy _time;
+        private readonly long _maxFileSize; // In bytes
 
         /// <summary>
         /// Open a new or existing Bitcask datastore with additional options.
@@ -34,14 +33,14 @@ namespace BitcaskNet
         /// <param name="options"></param>
         /// <returns></returns>
         public Bitcask(string directory)
-            : this(new FileSystemStrategy(directory, new TimeStrategy()), new TimeStrategy())
+            : this(new FileSystemStrategy(directory, new TimeStrategy()), 1024*1024*1024)
         {
         }
 
-        internal Bitcask(IIOStrategy ioStrategy, ITimeStrategy time)
+        internal Bitcask(IIOStrategy ioStrategy, long maxFileSize)
         {
             _fileSystem = ioStrategy;
-            _time = time;
+            _maxFileSize = maxFileSize;
 
             this._murmur = MurmurHash.Create128(seed: 3475832);
 
@@ -189,6 +188,17 @@ namespace BitcaskNet
                 ValuePos = position,
                 Timestamp = timestamp
             };
+
+            if (_writeStream.Position > _maxFileSize)
+            {
+                Sync();
+                _bw.Dispose();
+                _writeStream.Dispose();
+                _readStream.Dispose();
+
+                (this._activeFileId, this._readStream, this._writeStream) = _fileSystem.CreateActiveStreams();
+                _bw = new BinaryWriter(this._writeStream);
+            }
         }
 
         public void Delete(byte[] key)
