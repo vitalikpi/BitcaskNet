@@ -1,0 +1,32 @@
+syntax = "proto3";
+
+option csharp_namespace = "BitcaskService";
+
+import "google/protobuf/empty.proto";
+
+package greet;
+
+service Greeter {
+  rpc Delete(Key) returns (Result);
+  rpc Get(Key) returns (Value);
+  rpc ListKeys(google.protobuf.Empty) returns (stream Key);
+  rpc Put(KeyValue) returns (Result);
+}
+
+message Result
+{
+    bool success = 1;
+}
+
+message Key {
+  bytes key = 1;
+}
+
+message KeyValue {
+  bytes key = 1;
+  bytes value = 2;
+}
+
+message Value {
+  bytes bytes = 1;
+}

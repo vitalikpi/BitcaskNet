@@ -11,7 +11,7 @@ using System.Collections.Concurrent;
 
 namespace BitcaskNet
 {
-    public class Bitcask: IDisposable
+    public class Bitcask : IDisposable, IBitcask
     {
         private object _writeLock = new object();
         private object _activeFileLock = new object();
@@ -24,7 +24,7 @@ namespace BitcaskNet
         private BinaryWriter _bw;
         private readonly HashAlgorithm _murmur;
         private readonly byte[] _thombstoneObject = MakeThombstone();
-        
+
         private readonly IIOStrategy _fileSystem;
         private readonly long _maxFileSize; // In bytes
 
@@ -40,7 +40,7 @@ namespace BitcaskNet
         /// <param name="options"></param>
         /// <returns></returns>
         public Bitcask(ILogger<Bitcask> logger, string directory)
-            : this(logger, new FileSystemStrategy(directory, new TimeStrategy()), 1024*1024*1024)
+            : this(logger, new FileSystemStrategy(directory, new TimeStrategy()), 1024 * 1024 * 1024)
         {
         }
 
@@ -132,7 +132,7 @@ namespace BitcaskNet
 
                     if (actualCRC != expectedCRC)
                     {
-                        _logger.LogError("CRC mismatch error fileid=[" + fileId +"], position=[" + recordPosition + "]");
+                        _logger.LogError("CRC mismatch error fileid=[" + fileId + "], position=[" + recordPosition + "]");
                         continue;
                     }
 
@@ -177,7 +177,7 @@ namespace BitcaskNet
             AppendToActiveFileAndRunAction(key, value, (internalKey, block) => _keydir[internalKey] = block);
         }
 
-        private void AppendToActiveFileAndRunAction(byte[] key, byte[] value, Action<BitcaskKey,Block> action)
+        private void AppendToActiveFileAndRunAction(byte[] key, byte[] value, Action<BitcaskKey, Block> action)
         {
             var timestamp = new DateTimeOffset(DateTime.UtcNow).ToUnixTimeMilliseconds(); // TODO: make sure that this should be milliseconds
             uint intermediate = Crc32CAlgorithm.Compute(key);
@@ -223,7 +223,8 @@ namespace BitcaskNet
 
         public void Delete(byte[] key)
         {
-            AppendToActiveFileAndRunAction(key, _thombstoneObject, (internalKey, block) => {
+            AppendToActiveFileAndRunAction(key, _thombstoneObject, (internalKey, block) =>
+            {
                 if (_keydir.TryRemove(internalKey, out var _))
                     _logger.LogError("Tho,bstone was added to file but failed to remove from keydir.");
             });
@@ -257,7 +258,7 @@ namespace BitcaskNet
 
                 if (_keydir.ContainsKey(record.key)
                     && record.valueSize == _keydir[record.key].ValueSize
-                    && Get(record.keyBytes).SequenceEqual(record.value) )
+                    && Get(record.keyBytes).SequenceEqual(record.value))
                 {
                     Put(record.keyBytes, record.value);
                 }
