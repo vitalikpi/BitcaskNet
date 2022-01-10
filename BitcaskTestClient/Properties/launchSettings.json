@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "BitcaskTestClient": {
+      "commandName": "Project",
+      "commandLineArgs": "--action \"write\""
+    }
+  }
+}

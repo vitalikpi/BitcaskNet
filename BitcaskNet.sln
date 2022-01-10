@@ -1,11 +1,15 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 16
-VisualStudioVersion = 16.0.31727.386
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.32014.148
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BitcaskNet", "BitcaskNet\BitcaskNet.csproj", "{60899954-8588-4990-80C4-47B3649FA410}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BitcaskNet.Test", "BitcaskNet.Test\BitcaskNet.Test.csproj", "{EA90FC19-DE19-49BA-B513-CACF3E7A4403}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BitcaskNet.Test", "BitcaskNet.Test\BitcaskNet.Test.csproj", "{EA90FC19-DE19-49BA-B513-CACF3E7A4403}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BitcaskService", "BitcaskService\BitcaskService.csproj", "{8E976DEE-49A5-4271-8C48-A0412B945E2B}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BitcaskTestClient", "BitcaskTestClient\BitcaskTestClient.csproj", "{5E850C45-7129-48D3-9A10-FB593B3C5369}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -21,6 +25,14 @@ Global
 		{EA90FC19-DE19-49BA-B513-CACF3E7A4403}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{EA90FC19-DE19-49BA-B513-CACF3E7A4403}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{EA90FC19-DE19-49BA-B513-CACF3E7A4403}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8E976DEE-49A5-4271-8C48-A0412B945E2B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8E976DEE-49A5-4271-8C48-A0412B945E2B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8E976DEE-49A5-4271-8C48-A0412B945E2B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8E976DEE-49A5-4271-8C48-A0412B945E2B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5E850C45-7129-48D3-9A10-FB593B3C5369}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5E850C45-7129-48D3-9A10-FB593B3C5369}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5E850C45-7129-48D3-9A10-FB593B3C5369}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5E850C45-7129-48D3-9A10-FB593B3C5369}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
