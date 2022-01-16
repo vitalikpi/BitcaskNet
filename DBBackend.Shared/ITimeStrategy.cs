@@ -1,6 +1,6 @@
-﻿namespace BitcaskNet
+﻿namespace DBBackend.Shared
 {
-    internal interface ITimeStrategy
+    public interface ITimeStrategy
     {
         long GetUnixTimeMilliseconds();
         long GetUnixTimeSeconds();

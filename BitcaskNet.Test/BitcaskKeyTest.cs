@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using DBBackend.Shared;
 using Murmur;
 using Xunit;
 
@@ -18,16 +16,16 @@ namespace BitcaskNet.Test
         [Fact]
         public void HashConsistency()
         {
-            var key = new BitcaskKey(new byte[] {0, 0}, _murmur);
+            var key = new BinaryArrayKey(new byte[] {0, 0}, _murmur);
             Assert.Equal(key.GetHashCode(), key.GetHashCode());
         }
 
         [Fact]
         public void Equality()
         {
-            var key1 = new BitcaskKey(new byte[] { 0, 0 }, _murmur);
-            var key1copy = new BitcaskKey(new byte[] { 0, 0 }, _murmur);
-            var key2 = new BitcaskKey(new byte[] { 1, 1 }, _murmur);
+            var key1 = new BinaryArrayKey(new byte[] { 0, 0 }, _murmur);
+            var key1copy = new BinaryArrayKey(new byte[] { 0, 0 }, _murmur);
+            var key2 = new BinaryArrayKey(new byte[] { 1, 1 }, _murmur);
 
 
             Assert.Equal(key1, key1);

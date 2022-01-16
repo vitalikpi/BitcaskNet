@@ -1,7 +1,9 @@
-﻿using Force.Crc32;
+﻿using DBBackend.Shared;
+using Force.Crc32;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text;
 
 namespace BitcaskNet.Test
@@ -21,15 +23,18 @@ namespace BitcaskNet.Test
             return _directory.Keys;
         }
 
-        public Stream MakeReadStream(string fileId)
+        public DataReader MakeReader(string fileId)
         {
-            return new MemoryStream(_directory[fileId], false);
+            return new DataReader(fileId,
+                new MemoryStream(_directory[fileId], false));
         }
 
-        public (string activeFileId, Stream writeStream, Stream readStream) CreateActiveStreams()
+        public DataWriter MakeWriter()
         {
             var fileId = CreateFile();
-            return (_lastUsedId.ToString(), new MemoryStream(_directory[fileId], false), new MemoryStream(_directory[fileId], true));
+            return new DataWriter(_lastUsedId.ToString(), new MemoryStream(_directory[fileId], false), new MemoryStream(_directory[fileId], true));
+
+            
         }
 
         public string CreateFile()

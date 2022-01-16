@@ -16,6 +16,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\BitcaskNet\BitcaskNet.csproj" />
+    <ProjectReference Include="..\DBBackend.Shared\DBBackend.Shared.csproj" />
   </ItemGroup>
 
 </Project>

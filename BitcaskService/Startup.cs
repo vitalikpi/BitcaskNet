@@ -6,6 +6,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using System;
 using Microsoft.Extensions.Logging;
+using DBBackend.Interfaces;
 
 namespace BitcaskService
 {
@@ -17,7 +18,7 @@ namespace BitcaskService
         {
             services.AddGrpc();
             services.AddGrpcReflection();
-            services.AddSingleton<IBitcask, Bitcask>(s => new Bitcask(s.GetRequiredService<ILogger<Bitcask>>(), Environment.CurrentDirectory));
+            services.AddSingleton<IDBBackend, Bitcask>(s => new Bitcask(s.GetRequiredService<ILogger<Bitcask>>(), Environment.CurrentDirectory));
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

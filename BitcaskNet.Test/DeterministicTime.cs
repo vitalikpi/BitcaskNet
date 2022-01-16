@@ -1,4 +1,6 @@
-﻿namespace BitcaskNet.Test
+﻿using DBBackend.Shared;
+
+namespace BitcaskNet.Test
 {
     internal class DeterministicTimeStrategy: ITimeStrategy
     {

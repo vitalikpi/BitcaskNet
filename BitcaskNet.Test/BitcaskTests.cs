@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using DBBackend.Shared;
+using Microsoft.Extensions.Logging;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -135,7 +136,7 @@ namespace BitcaskNet.Test
         {
             var temporaryDirectory = DirectoryUtils.CreateTemporaryDirectory();
 
-            using (var d = new Bitcask(_logger, new FileSystemStrategy(temporaryDirectory, new DeterministicTimeStrategy()), 1024))
+            using (var d = new Bitcask(_logger, new FileSystemStrategy(temporaryDirectory, new DeterministicTimeStrategy()), new DeterministicTimeStrategy(), 1024))
             {
                 d.Put(new byte[] { 1 }, new byte[1025]);
                 d.Put(new byte[] { 1 }, new byte[100]);

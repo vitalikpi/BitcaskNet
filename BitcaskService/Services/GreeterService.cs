@@ -1,4 +1,4 @@
-using BitcaskNet;
+using DBBackend.Interfaces;
 using Grpc.Core;
 using Microsoft.Extensions.Logging;
 using System.Threading.Tasks;
@@ -8,9 +8,9 @@ namespace BitcaskService
     public class GreeterService : Greeter.GreeterBase
     {
         private readonly ILogger<GreeterService> _logger;
-        private readonly IBitcask _bitcask;
+        private readonly IDBBackend _bitcask;
 
-        public GreeterService(ILogger<GreeterService> logger, IBitcask bitcask)
+        public GreeterService(ILogger<GreeterService> logger, IDBBackend bitcask)
         {
             _logger = logger;
             _bitcask = bitcask;

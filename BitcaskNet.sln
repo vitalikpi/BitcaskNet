@@ -7,9 +7,15 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BitcaskNet", "BitcaskNet\Bi
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BitcaskNet.Test", "BitcaskNet.Test\BitcaskNet.Test.csproj", "{EA90FC19-DE19-49BA-B513-CACF3E7A4403}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BitcaskService", "BitcaskService\BitcaskService.csproj", "{8E976DEE-49A5-4271-8C48-A0412B945E2B}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BitcaskService", "BitcaskService\BitcaskService.csproj", "{8E976DEE-49A5-4271-8C48-A0412B945E2B}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BitcaskTestClient", "BitcaskTestClient\BitcaskTestClient.csproj", "{5E850C45-7129-48D3-9A10-FB593B3C5369}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BitcaskTestClient", "BitcaskTestClient\BitcaskTestClient.csproj", "{5E850C45-7129-48D3-9A10-FB593B3C5369}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SSTableBackend", "SSTableBackend\SSTableBackend.csproj", "{925BE2F7-1E00-442F-AA71-B69C3032F041}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DBBackend.Interfaces", "DBBackend.Interfaces\DBBackend.Interfaces.csproj", "{556DC8AC-BE5B-4CD3-B3A8-BB4ABA9443E7}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DBBackend.Shared", "DBBackend.Shared\DBBackend.Shared.csproj", "{27B74766-47A5-4AA4-A7B9-026B4DD653C3}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -33,6 +39,18 @@ Global
 		{5E850C45-7129-48D3-9A10-FB593B3C5369}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{5E850C45-7129-48D3-9A10-FB593B3C5369}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{5E850C45-7129-48D3-9A10-FB593B3C5369}.Release|Any CPU.Build.0 = Release|Any CPU
+		{925BE2F7-1E00-442F-AA71-B69C3032F041}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{925BE2F7-1E00-442F-AA71-B69C3032F041}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{925BE2F7-1E00-442F-AA71-B69C3032F041}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{925BE2F7-1E00-442F-AA71-B69C3032F041}.Release|Any CPU.Build.0 = Release|Any CPU
+		{556DC8AC-BE5B-4CD3-B3A8-BB4ABA9443E7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{556DC8AC-BE5B-4CD3-B3A8-BB4ABA9443E7}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{556DC8AC-BE5B-4CD3-B3A8-BB4ABA9443E7}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{556DC8AC-BE5B-4CD3-B3A8-BB4ABA9443E7}.Release|Any CPU.Build.0 = Release|Any CPU
+		{27B74766-47A5-4AA4-A7B9-026B4DD653C3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{27B74766-47A5-4AA4-A7B9-026B4DD653C3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{27B74766-47A5-4AA4-A7B9-026B4DD653C3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{27B74766-47A5-4AA4-A7B9-026B4DD653C3}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -1,6 +1,6 @@
-﻿using System.IO;
+﻿using DBBackend.Shared;
+using System.IO;
 using System.Linq;
-using System.Threading;
 using Xunit;
 
 namespace BitcaskNet.Test
@@ -14,19 +14,19 @@ namespace BitcaskNet.Test
             var directoryPath = DirectoryUtils.CreateTemporaryDirectory();
 
             var strategy = new FileSystemStrategy(directoryPath, new DeterministicTimeStrategy());
-            var (fileId, writer, _) = strategy.CreateActiveStreams();
-            writer.Close();
-            Assert.Equal(expectedFileList[0], Path.GetFileName(fileId));
+            var writer = strategy.MakeWriter();
+            writer.Dispose();
+            Assert.Equal(expectedFileList[0], Path.GetFileName(writer.FileId));
 
-            (fileId, writer, _) = strategy.CreateActiveStreams();
-            writer.Close();
-            Assert.Equal(expectedFileList[1], Path.GetFileName(fileId));
+            writer  = strategy.MakeWriter();
+            writer.Dispose();
+            Assert.Equal(expectedFileList[1], Path.GetFileName(writer.FileId));
 
-            (fileId, writer, _) = strategy.CreateActiveStreams();
-            writer.Close();
-            Assert.Equal(expectedFileList[2], Path.GetFileName(fileId));
+            writer = strategy.MakeWriter();
+            writer.Dispose();
+            Assert.Equal(expectedFileList[2], Path.GetFileName(writer.FileId));
 
-            Assert.True(strategy.EnumerateFiles().Select(Path.GetFileName).ToArray().SequenceEqual(expectedFileList));
+            Assert.True(strategy.EnumerateFiles().Select(fileId => Path.GetFileName(fileId)).ToArray().SequenceEqual(expectedFileList));
         }
     }
 }

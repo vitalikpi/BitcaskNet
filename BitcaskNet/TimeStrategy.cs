@@ -1,4 +1,5 @@
-﻿using System;
+﻿using DBBackend.Shared;
+using System;
 
 namespace BitcaskNet
 {

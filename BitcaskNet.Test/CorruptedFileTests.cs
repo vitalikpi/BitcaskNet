@@ -7,6 +7,7 @@ namespace BitcaskNet.Test
     public class CorruptedFileTests
     {
         private readonly InMemoryIOStrategy _ds;
+        private readonly DeterministicTimeStrategy _ts;
         private readonly ITestOutputHelper _output;
         private readonly ILogger<Bitcask> _logger;
 
@@ -29,7 +30,7 @@ namespace BitcaskNet.Test
             position = _ds.AppendRecord(position, fileId, 1, key1, updatedValue1);
             _ds.AppendRecord(position, fileId, 0, key1, value1);
 
-            using var bcsk = new Bitcask(_logger, _ds, 1024*1024*1024);
+            using var bcsk = new Bitcask(_logger, _ds, _ts, 1024 * 1024*1024);
 
 
             Assert.Equal(updatedValue1, bcsk.Get(key1));
